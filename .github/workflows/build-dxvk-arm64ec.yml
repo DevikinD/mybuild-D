@@ -23,20 +23,24 @@ jobs:
         sudo tar -xvf llvm-mingw.tar.xz -C /opt/
         echo "PATH=/opt/llvm-mingw-20250305-ucrt-ubuntu-20.04-x86_64/bin:$PATH" >> $GITHUB_ENV
 
-    - name: dep
+    - name: install dep
       run: sudo apt install meson glslang-tools
     
     - name: Build dxvk-arm64ec
+      working-directory: dxvk
       run: |
-        cd dxvk
         mkdir -p outputs
         ./package-release.sh master outputs --64-only
+
+    - name: change name
+      working-directory: dxvk
+      run: cat outputs/dxvk-master.tar.gz dxvk-master-arm64ec.tar.gz
 
     - name: Upload to Release
       if: success()
       uses: softprops/action-gh-release@v2
       with:
-        tag_name: dxvk-arm64ec
-        files: dxvk/outputs/dxvk-master.tar.gz
+        tag_name: dxvk-build
+        files: dxvk/outputs/dxvk-master-arm64ec.tar.gz
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
