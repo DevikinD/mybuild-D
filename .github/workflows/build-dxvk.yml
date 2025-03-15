@@ -11,7 +11,7 @@ jobs:
     - name: Clone dxvk repo
       uses: actions/checkout@v4
       with:
-        repository: doitsujin/dxvk
+        repository: DevikinD/dxvk
         submodules: recursive
         path: dxvk
 
