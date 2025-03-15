@@ -36,7 +36,7 @@ jobs:
 
     - name: change name
       working-directory: dxvk
-      run: cat output/dxvk-master.tar.gz >> dxvk-llvm-mingw.tar.gz
+      run: cat output/dxvk-master.tar.gz >> output/dxvk-llvm-mingw.tar.gz
 
     - name: Upload to Release
       if: success()
