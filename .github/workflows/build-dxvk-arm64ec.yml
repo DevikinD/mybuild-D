@@ -34,7 +34,7 @@ jobs:
 
     - name: change name
       working-directory: dxvk
-      run: cat outputs/dxvk-master.tar.gz dxvk-master-arm64ec.tar.gz
+      run: cat outputs/dxvk-master.tar.gz >> dxvk-master-arm64ec.tar.gz
 
     - name: Upload to Release
       if: success()
