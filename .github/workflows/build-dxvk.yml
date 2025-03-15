@@ -30,7 +30,7 @@ jobs:
       run: |
         cd dxvk
         mkdir -p outputs
-        ./package-release.sh master outputs
+        ./package-release.sh master outputs --64-only
 
     - name: Upload to Release
       if: success()
