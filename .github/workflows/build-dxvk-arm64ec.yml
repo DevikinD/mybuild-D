@@ -33,14 +33,14 @@ jobs:
         ./package-release.sh master outputs --64-only
 
     - name: change name
-      working-directory: dxvk
-      run: cat outputs/dxvk-master.tar.gz >> dxvk-master-arm64ec.tar.gz
+      working-directory: dxvk/outputs
+      run: tar -xzf dxvk-master.tar.gz && mv dxvk-master dxvk-master_arm64ec && tar -czf dxvk-master_arm64ec.tar.gz dxvk-master_arm64ec
 
     - name: Upload to Release
       if: success()
       uses: softprops/action-gh-release@v2
       with:
         tag_name: dxvk-build
-        files: dxvk/outputs/dxvk-master-arm64ec.tar.gz
+        files: dxvk/outputs/dxvk-master_arm64ec.tar.gz
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
