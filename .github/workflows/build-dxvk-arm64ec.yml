@@ -1,4 +1,4 @@
-name: dxvk artifacts
+name: dxvk artifacts arm64ec
 
 on:
   workflow_dispatch:
