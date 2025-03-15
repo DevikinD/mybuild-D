@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     
 jobs:
-  build-dxvk:
+  build-dxvk-llvm_mingw:
     runs-on: ubuntu-latest
 
     steps:
@@ -35,14 +35,14 @@ jobs:
         ./package-release.sh master output --build-id
 
     - name: change name
-      working-directory: dxvk
-      run: cat output/dxvk-master.tar.gz >> output/dxvk-llvm-mingw.tar.gz
+      working-directory: dxvk/output
+      run: tar -xzf dxvk-master.tar.gz && mv dxvk-master dxvk-llvm_mingw && tar -czf dxvk-llvm_mingw.tar.gz dxvk-llvm_mingw
 
     - name: Upload to Release
       if: success()
       uses: softprops/action-gh-release@v2
       with:
         tag_name: dxvk-build
-        files: dxvk/output/dxvk-llvm-mingw.tar.gz
+        files: dxvk/output/dxvk-llvm_mingw.tar.gz
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
