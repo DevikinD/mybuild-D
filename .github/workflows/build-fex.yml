@@ -30,11 +30,9 @@ jobs:
       run: |
         mkdir -p build_ec
         cd build_ec
-        cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-         
+        cmake -DCMAKE_BUILD_TYPE=Release \
           -DENABLE_LTO=False \
           -DMINGW_TRIPLE=arm64ec-w64-mingw32 \
-          -DCMAKE_BUILD_TYPE=Release \
           -DENABLE_JEMALLOC_GLIBC_ALLOC=False \
           -DBUILD_TESTS=False ..
         make -j$(nproc) arm64ecfex
@@ -44,14 +42,12 @@ jobs:
       run: |
         mkdir -p build_pe
         cd build_pe
-        cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-          
+        cmake -DCMAKE_BUILD_TYPE=Release \
           -DENABLE_LTO=False \
           -DMINGW_TRIPLE=aarch64-w64-mingw32 \
-          -DCMAKE_BUILD_TYPE=Release \
           -DENABLE_JEMALLOC_GLIBC_ALLOC=False \
           -DBUILD_TESTS=False ..
-         make -j$(nproc) wow64fex 
+        make -j$(nproc) wow64fex 
 
     - name: Package FEX DLLs
       working-directory: FEX
