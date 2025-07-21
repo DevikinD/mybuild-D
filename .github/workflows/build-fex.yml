@@ -31,7 +31,7 @@ jobs:
         mkdir -p build_ec
         cd build_ec
         cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-          -DCMAKE_TOOLCHAIN_FILE=../toolchain_mingw.cmake \
+         
           -DENABLE_LTO=False \
           -DMINGW_TRIPLE=arm64ec-w64-mingw32 \
           -DCMAKE_BUILD_TYPE=Release \
@@ -45,7 +45,7 @@ jobs:
         mkdir -p build_pe
         cd build_pe
         cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-          -DCMAKE_TOOLCHAIN_FILE=../toolchain_mingw.cmake \
+          
           -DENABLE_LTO=False \
           -DMINGW_TRIPLE=aarch64-w64-mingw32 \
           -DCMAKE_BUILD_TYPE=Release \
