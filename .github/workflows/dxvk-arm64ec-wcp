@@ -1,0 +1,171 @@
+name: Convert DXVK to WCP format
+
+on:
+  workflow_run:
+    workflows: ["dxvk arm64ec actions"]
+    types:
+      - completed
+
+jobs:
+  convert-to-wcp:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Download built artifact
+      uses: actions/download-artifact@v4
+      with:
+        run-id: ${{ github.event.workflow_run.id }}
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        path: downloaded-artifacts
+
+    - name: Find and extract tar.gz file
+      id: find_tar
+      run: |
+        cd downloaded-artifacts
+        TAR_FILE=$(find . -name "dxvk-*.tar.gz" | head -n 1)
+        echo "TAR_FILE=$TAR_FILE" >> $GITHUB_OUTPUT
+        
+        # Extract version name from filename (format: dxvk-branch-commit.tar.gz)
+        FILENAME=$(basename "$TAR_FILE" .tar.gz)
+        VERSION_NAME=${FILENAME#dxvk-}
+        echo "VERSION_NAME=$VERSION_NAME" >> $GITHUB_OUTPUT
+        
+        # Extract commit hash (last part after last dash)
+        COMMIT_HASH=$(echo "$VERSION_NAME" | rev | cut -d'-' -f1 | rev)
+        echo "COMMIT_HASH=$COMMIT_HASH" >> $GITHUB_OUTPUT
+        
+        echo "Found file: $TAR_FILE"
+        echo "Version name: $VERSION_NAME"
+        echo "Commit hash: $COMMIT_HASH"
+
+    - name: Get latest DXVK tag version (without 'v' prefix)
+      id: get_version
+      run: |
+        git clone --depth=1 --branch=master https://github.com/doitsujin/dxvk.git dxvk-repo-tags
+        cd dxvk-repo-tags
+        git fetch --tags
+        LATEST_TAG=$(git describe --tags --abbrev=0 $(git rev-list --tags --max-count=1))
+        # Remove the 'v' prefix from the tag
+        VERSION=$(echo "$LATEST_TAG" | sed 's/^v//')
+        echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+        echo "Latest DXVK version (without 'v'): $VERSION"
+
+    - name: Extract and reorganize files
+      run: |
+        cd downloaded-artifacts
+        mkdir -p temp_extract
+        tar -xzf "${{ steps.find_tar.outputs.TAR_FILE }}" -C temp_extract
+        
+        # Find the extracted directory (should be dxvk-version_name)
+        EXTRACTED_DIR=$(find temp_extract -name "dxvk-*" -type d)
+        echo "Extracted to: $EXTRACTED_DIR"
+        
+        # Create new structure
+        mkdir -p ../package/system32 ../package/syswow64
+        
+        # Move x64 files to system32
+        if [ -d "$EXTRACTED_DIR/x64" ]; then
+          cp "$EXTRACTED_DIR/x64/"*.dll ../package/system32/
+          echo "Copied $(ls ../package/system32/ | wc -l) files to system32"
+        else
+          echo "WARNING: x64 directory not found in $EXTRACTED_DIR"
+        fi
+        
+        # Move x32 files to syswow64
+        if [ -d "$EXTRACTED_DIR/x32" ]; then
+          cp "$EXTRACTED_DIR/x32/"*.dll ../package/syswow64/
+          echo "Copied $(ls ../package/syswow64/ | wc -l) files to syswow64"
+        else
+          echo "WARNING: x32 directory not found in $EXTRACTED_DIR"
+        fi
+
+    - name: Verify DLL files exist
+      run: |
+        echo "System32 DLLs:"
+        ls -la package/system32/ 2>/dev/null || echo "No system32 directory or no files found"
+        echo ""
+        echo "SysWOW64 DLLs:"
+        ls -la package/syswow64/ 2>/dev/null || echo "No syswow64 directory or no files found"
+
+    - name: Create profile.json
+      run: |
+        cat > package/profile.json << EOF
+        {
+          "type": "DXVK",
+          "versionName": "${{ steps.get_version.outputs.VERSION }}-arm64ec-${{ steps.find_tar.outputs.COMMIT_HASH }}",
+          "versionCode": 0,
+          "description": "DXVK Nightly arm64ec commit ${{ steps.find_tar.outputs.COMMIT_HASH }}",
+          "files": [
+            {
+              "source": "system32/d3d8.dll",
+              "target": "\${system32}/d3d8.dll"
+            },	
+            {
+              "source": "system32/d3d9.dll",
+              "target": "\${system32}/d3d9.dll"
+            },	
+            {
+              "source": "system32/d3d10core.dll",
+              "target": "\${system32}/d3d10core.dll"
+            },
+            {
+              "source": "system32/d3d11.dll",
+              "target": "\${system32}/d3d11.dll"
+            },
+            {
+              "source": "system32/dxgi.dll",
+              "target": "\${system32}/dxgi.dll"
+            },
+            {
+              "source": "syswow64/d3d8.dll",
+              "target": "\${syswow64}/d3d8.dll"
+            },	
+            {
+              "source": "syswow64/d3d9.dll",
+              "target": "\${syswow64}/d3d9.dll"
+            },	
+            {
+              "source": "syswow64/d3d10core.dll",
+              "target": "\${syswow64}/d3d10core.dll"
+            },
+            {
+              "source": "syswow64/d3d11.dll",
+              "target": "\${syswow64}/d3d11.dll"
+            },
+            {
+              "source": "syswow64/dxgi.dll",
+              "target": "\${syswow64}/dxgi.dll"
+            }
+          ]
+        }
+        EOF
+        
+        echo "Created profile.json with version: ${{ steps.get_version.outputs.VERSION }}-arm64ec-${{ steps.find_tar.outputs.COMMIT_HASH }}"
+        echo "Profile content:"
+        cat package/profile.json
+
+    - name: Install zstd
+      run: sudo apt-get update && sudo apt-get install -y zstd
+
+    - name: Create tar.zstd package
+      run: |
+        cd package
+        tar --zstd -cf "../dxvk-${{ steps.get_version.outputs.VERSION }}-arm64ec-${{ steps.find_tar.outputs.COMMIT_HASH }}.wcp" .
+        echo "Created package: dxvk-${{ steps.get_version.outputs.VERSION }}-arm64ec-${{ steps.find_tar.outputs.COMMIT_HASH }}.wcp"
+
+    - name: Upload WCP artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: dxvk-wcp-package
+        path: dxvk-*.wcp
+        if-no-files-found: error
+
+    - name: Show final result
+      run: |
+        echo "Conversion completed successfully!"
+        echo "Generated file: dxvk-${{ steps.get_version.outputs.VERSION }}-arm64ec-${{ steps.find_tar.outputs.COMMIT_HASH }}.wcp"
+        ls -la *.wcp
