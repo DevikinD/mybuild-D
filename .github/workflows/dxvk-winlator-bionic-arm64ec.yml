@@ -181,6 +181,7 @@ jobs:
     - name: Upload wcp
       uses: actions/upload-artifact@v4
       with:
+        name: dxvk-${{ steps.get_version.outputs.VERSION }}-arm64ec-${{ env.DXVK_COMMIT }}
         path: |
          wcp-build/dxvk-${{ steps.get_version.outputs.VERSION }}-arm64ec-${{ env.DXVK_COMMIT }}.wcp
         if-no-files-found: error
