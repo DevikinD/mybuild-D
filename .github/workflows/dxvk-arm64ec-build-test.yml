@@ -1,0 +1,45 @@
+name: dxvk artifacts arm64ec (test)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-dxvk:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Clone dxvk repo
+      uses: actions/checkout@v4
+      with:
+        repository: doitsujin/dxvk
+        submodules: recursive
+        fetch-depth: 0
+        fetch-tags: true
+        path: dxvk
+
+    - name: Install llvm-mingw
+      run: |
+        sudo mkdir -p /opt
+        curl -L -o llvm-mingw.tar.xz \
+          https://github.com/bylaws/llvm-mingw/releases/download/20250305/llvm-mingw-20250305-ucrt-ubuntu-20.04-x86_64.tar.xz
+        sudo tar -xvf llvm-mingw.tar.xz -C /opt/
+        echo "PATH=/opt/llvm-mingw-20250305-ucrt-ubuntu-20.04-x86_64/bin:$PATH" >> $GITHUB_ENV
+
+    - name: install dep
+      run: sudo apt install meson glslang-tools
+    
+    - name: Build dxvk-arm64ec
+      working-directory: dxvk
+      run: |
+        export VERSION_NAME="${GITHUB_REF##*/}-${GITHUB_SHA##*/}"
+          ./package-release.sh ${VERSION_NAME} build
+          echo "VERSION_NAME=${VERSION_NAME}" >> $GITHUB_ENV
+
+    - name: Upload to Release
+      if: success()
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: dxvk-build
+        files: build/dxvk-${{ env.VERSION_NAME }}.tar.gz
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
