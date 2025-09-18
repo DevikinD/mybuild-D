@@ -175,7 +175,7 @@ jobs:
     - name: Create WCP package
       run: |
         cd wcp-build/package
-        tar --zstd -cf "../dxvk-${{ steps.get_version.outputs.VERSION }}-arm64ec-${{ env.DXVK_COMMIT }}.wcp" --zstd=ultra --long .
+        tar -cf - . | zstd -19 --ultra --long -o "../dxvk-${{ steps.get_version.outputs.VERSION }}-arm64ec-${{ env.DXVK_COMMIT }}.wcp"
         echo "Created WCP package: dxvk-${{ steps.get_version.outputs.VERSION }}-arm64ec-${{ env.DXVK_COMMIT }}.wcp"
 
     - name: Upload wcp
