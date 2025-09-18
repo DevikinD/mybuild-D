@@ -1,4 +1,4 @@
-name: dxvk artifacts arm64ec (test)
+name: dxvk artifacts arm64ec (release)
 
 on:
   workflow_dispatch:
