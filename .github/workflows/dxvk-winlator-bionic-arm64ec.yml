@@ -1,4 +1,4 @@
-name: DXVK arm64ec Build and WCP Package
+name: DXVK arm64ec Winlator Bionic
 
 on:
   workflow_dispatch:
@@ -175,23 +175,12 @@ jobs:
     - name: Create WCP package
       run: |
         cd wcp-build/package
-        tar --zstd -cf "../dxvk-${{ steps.get_version.outputs.VERSION }}-arm64ec-${{ env.DXVK_COMMIT }}.wcp" .
+        tar --zstd -cf "../dxvk-${{ steps.get_version.outputs.VERSION }}-arm64ec-${{ env.DXVK_COMMIT }}.wcp" --zstd=ultra --long .
         echo "Created WCP package: dxvk-${{ steps.get_version.outputs.VERSION }}-arm64ec-${{ env.DXVK_COMMIT }}.wcp"
 
-    - name: Upload both artifacts
+    - name: Upload wcp
       uses: actions/upload-artifact@v4
       with:
-        name: dxvk-packages
         path: |
-          dxvk/build/dxvk-${{ env.VERSION_NAME }}.tar.gz
-          wcp-build/dxvk-${{ steps.get_version.outputs.VERSION }}-arm64ec-${{ env.DXVK_COMMIT }}.wcp
+         wcp-build/dxvk-${{ steps.get_version.outputs.VERSION }}-arm64ec-${{ env.DXVK_COMMIT }}.wcp
         if-no-files-found: error
-
-    - name: Show final results
-      run: |
-        echo "Build completed successfully!"
-        echo "Generated files:"
-        echo "  - dxvk-${{ env.VERSION_NAME }}.tar.gz (original build)"
-        echo "  - dxvk-${{ steps.get_version.outputs.VERSION }}-arm64ec-${{ env.DXVK_COMMIT }}.wcp (WCP package)"
-        ls -la dxvk/build/dxvk-*.tar.gz
-        ls -la wcp-build/dxvk-*.wcp
