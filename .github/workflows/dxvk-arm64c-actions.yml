@@ -69,5 +69,5 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: dxvk-win-${{ env.VERSION_NAME }}
-        path: build/dxvk-${{ env.VERSION_NAME }}.tar.gz
+        path: dxvk/build/dxvk-${{ env.VERSION_NAME }}.tar.gz
         if-no-files-found: error
