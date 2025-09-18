@@ -17,6 +17,11 @@ jobs:
         fetch-tags: true
         path: dxvk
 
+    - name: Clone workflow repo (for custom files)
+      uses: actions/checkout@v4
+      with:
+        path: mybuild-D
+
     - name: Install llvm-mingw
       run: |
         sudo mkdir -p /opt
@@ -28,18 +33,42 @@ jobs:
     - name: install dep
       run: sudo apt install meson glslang-tools
     
+    - name: Replace build-win64.txt with custom version
+      run: |
+        cp mybuild-D/dxvk/build-win64.txt dxvk/build-win64.txt
+        echo "Replaced build-win64.txt with custom version"
+    
+    - name: Get dxvk branch and commit info
+      working-directory: dxvk
+      run: |
+        # Get the current branch name or use 'master' if in detached HEAD state
+        BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
+        if [ "$BRANCH_NAME" = "HEAD" ]; then
+          # If in detached HEAD, check if we're on a tag or use 'master'
+          if git describe --exact-match --tags HEAD 2>/dev/null; then
+            BRANCH_NAME="tag-$(git describe --tags HEAD)"
+          else
+            BRANCH_NAME="master"
+          fi
+        fi
+        
+        # Get the short commit hash
+        COMMIT_SHA=$(git rev-parse --short HEAD)
+        
+        echo "DXVK_BRANCH=$BRANCH_NAME" >> $GITHUB_ENV
+        echo "DXVK_COMMIT=$COMMIT_SHA" >> $GITHUB_ENV
+        echo "VERSION_NAME=${BRANCH_NAME}-${COMMIT_SHA}" >> $GITHUB_ENV
+
     - name: Build dxvk-arm64ec
       working-directory: dxvk
       run: |
-        export VERSION_NAME="${GITHUB_REF##*/}-${GITHUB_SHA##*/}"
-          ./package-release.sh ${VERSION_NAME} build
-          echo "VERSION_NAME=${VERSION_NAME}" >> $GITHUB_ENV
+        ./package-release.sh ${{ env.VERSION_NAME }} build
 
     - name: Upload to Release
       if: success()
       uses: softprops/action-gh-release@v2
       with:
         tag_name: dxvk-build
-        files: build/dxvk-${{ env.VERSION_NAME }}.tar.gz
+        files: dxvk/build/dxvk-${{ env.VERSION_NAME }}.tar.gz
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
